@@ -4,15 +4,22 @@ const User = require("./model/user")
 
 const app = express();
 
+app.use(express.json())
+
 app.post("/signup", async (req, res) => {
 
     //creating new user or instance of Usermodel with userobj
-    const user = new User({
-        firstName: " virat",
-        lastName: "Rauniyar",
-        Email: "virat@gmail.com",
-        password: "virat",
-    })
+    // const user = new User({
+    //     firstName: " virat",
+    //     lastName: "Rauniyar",
+    //     Email: "virat@gmail.com",
+    //     password: "virat",
+    // })
+
+
+    const user = new User(req.body)
+
+
 
     //it save in database and returns promise
     try{
