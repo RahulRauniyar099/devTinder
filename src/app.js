@@ -3,40 +3,35 @@ const express = require("express");
 const app = express();
 
 
-//optional 
-app.get(/^\/ab?c$/, (req, res) => {
-    console.log("knjbj");
+//optional  
+// app.get(/^\/ab?c$/, (req, res) => {
+//     console.log("knjbj");
     
-    res.send("Matched either /ac or /abc");
-});
+//     res.send("Matched either /ac or /abc");
+// });
 
-
-// it will only make call to get method
-// app.get("/user", (req,res) => {
-//     res.send({firstname: "Rahul", lastname: "Rauniyar"})
+// app.get(/^\/ab+c$/, (req,res) => {
+//     res.send("Data is send")
 // })
 
+//mutliple route handlers
 
-// app.post("/user",(req,res) => {
-//     res.send("Post is tested")
-// })
+app.use("/user", (req,res,next) => {
 
+    // res.send("Response")
+    next();
 
-// app.delete("/user",(req,res) => {
-//     res.send("delete is tested")
-// })
+},
+(req,res, next) => {
+    // res.send("2nd response!!")
+    next()
+},
+(req,res,next) => {
+    res.send("3rd response")
+}
 
+)
 
-// app.patch("/user",(req,res) => {
-//     res.send("Patch is tested")
-// })
-
-
-// It will matches all the HTTP API calls
-
-// app.use("/test",(req,res) => {
-//     res.send("Hello world")
-// })
 
 
 app.listen(3000, () => {
