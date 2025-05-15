@@ -2,35 +2,22 @@ const express = require("express");
 
 const app = express();
 
+const { adminAuth, userAuth } = require("./middleware/auth")
 
-//optional  
-// app.get(/^\/ab?c$/, (req, res) => {
-//     console.log("knjbj");
-    
-//     res.send("Matched either /ac or /abc");
-// });
+//as we have authorization which will work for other routes as well that's the reason we use middleware
+app.use("/admin", adminAuth )
 
-// app.get(/^\/ab+c$/, (req,res) => {
-//     res.send("Data is send")
-// })
+app.get("/user", userAuth, (req,res) => {
+    res.send("Check user Auth")
+})
 
-//mutliple route handlers
+app.get("/admin/getUserData", (req,res) =>{
+    res.send("All Data sent to user")
+})
 
-app.use("/user", (req,res,next) => {
-
-    // res.send("Response")
-    next();
-
-},
-(req,res, next) => {
-    // res.send("2nd response!!")
-    next()
-},
-(req,res,next) => {
-    res.send("3rd response")
-}
-
-)
+app.delete("/admin/deleteUser", (req,res) => {
+    res.send("Deleted the data")
+})
 
 
 
