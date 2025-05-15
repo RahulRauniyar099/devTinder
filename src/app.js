@@ -22,10 +22,10 @@ app.post("/signup", async (req, res) => {
 
 
     //it save in database and returns promise
-    try{
-   await user.save()
-   res.send("User added successfully")
-    } catch(err){
+    try {
+        await user.save()
+        res.send("User added successfully")
+    } catch (err) {
         res.status(400).send("Data not added", err.message)
     }
 })
@@ -33,14 +33,16 @@ app.post("/signup", async (req, res) => {
 
 //find by email
 
-app.get("/user", async (req,res) => {
-    const findbyEmail = req.body.emailId;
+app.get("/user", async (req, res) => {
 
-    try{
-        const userEmail = await User.find({emailId: findbyEmail})
+    const findbyEmail = req.body._id;
+
+    try {
+
+        const userEmail = await User.findById({ _id: findbyEmail })
         res.send(userEmail)
     }
-    catch(err){
+    catch (err) {
         res.status(400).send("something went wrong")
 
     }
@@ -49,23 +51,58 @@ app.get("/user", async (req,res) => {
 
 
 //feedApi 
-app.get("/feed", async (req,res) => {
+app.get("/feed", async (req, res) => {
 
-    try{
+    try {
         const users = await User.find({})
-        if(users === 0){
-        res.status(404).send("Error")
+        if (users === 0) {
+            res.status(404).send("Error")
 
-        }else {
-        res.send(users)
+        } else {
+            res.send(users)
 
         }
 
     }
-    catch(err){
+    catch (err) {
         res.status(404).send("Error")
-    }    
+    }
 
+})
+
+//deleteApi
+
+app.delete("/delete", async (req, res) => {
+
+    const userDelete = req.body.userId
+    console.log("11111", userDelete)
+    try{
+        const user = await User.findByIdAndDelete( userDelete)
+        if (user === 0){
+        res.status(404).send("Data not found")
+            
+        }else{
+        res.send(user)
+        }
+
+    }catch(err){
+        res.status(404).send("Data not found")
+    }
+})
+
+
+//update API
+
+app.patch("/update", async (req,res) => {
+    const userUpdate = req.body
+    const userId = req.body.userId
+
+    try{
+     res.send(   await User.findByIdAndUpdate({_id: userId}, userUpdate))
+
+    }catch{
+        res.status(404).send("something went wrong")
+    }
 })
 
 connectDB().then(() => {
