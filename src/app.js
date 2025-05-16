@@ -7,28 +7,21 @@ const app = express();
 app.use(express.json())
 
 app.post("/signup", async (req, res) => {
+    const user = new User(req.body);
 
-    //creating new user or instance of Usermodel with userobj
-    // const user = new User({
-    //     firstName: " virat",
-    //     lastName: "Rauniyar",
-    //     Email: "virat@gmail.com",
-    //     password: "virat",
-    // })
-
-
-    const user = new User(req.body)
-
-
-
-    //it save in database and returns promise
     try {
-        await user.save()
-        res.send("User added successfully")
+        await user.save();
+    unique = true
+
+        res.send("User added successfully");
     } catch (err) {
-        res.status(400).send("Data not added", err.message)
+        if (err.code === 11000) {
+            res.status(400).send("Email already exists");
+        } else {
+            res.status(400).send(`Data not added: ${err.message}`);
+        }
     }
-})
+});
 
 
 //find by email
@@ -76,16 +69,16 @@ app.delete("/delete", async (req, res) => {
 
     const userDelete = req.body.userId
     console.log("11111", userDelete)
-    try{
-        const user = await User.findByIdAndDelete( userDelete)
-        if (user === 0){
-        res.status(404).send("Data not found")
-            
-        }else{
-        res.send(user)
+    try {
+        const user = await User.findByIdAndDelete(userDelete)
+        if (user === 0) {
+            res.status(404).send("Data not found")
+
+        } else {
+            res.send(user)
         }
 
-    }catch(err){
+    } catch (err) {
         res.status(404).send("Data not found")
     }
 })
@@ -93,14 +86,16 @@ app.delete("/delete", async (req, res) => {
 
 //update API
 
-app.patch("/update", async (req,res) => {
+app.patch("/update", async (req, res) => {
     const userUpdate = req.body
     const userId = req.body.userId
+    try {
+        res.send(await User.findByIdAndUpdate({ _id: userId }, userUpdate,{ runValidators: true}))
+        
 
-    try{
-     res.send(   await User.findByIdAndUpdate({_id: userId}, userUpdate))
 
-    }catch{
+
+    } catch {
         res.status(404).send("something went wrong")
     }
 })
