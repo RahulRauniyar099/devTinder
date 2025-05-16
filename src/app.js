@@ -1,18 +1,34 @@
 const express = require("express");
 const connectDB = require("./config/database")
 const User = require("./model/user")
+const { validateSignupData } = require("./utils/validation")
+const bcrypt = require("bcrypt")
 
 const app = express();
 
 app.use(express.json())
 
 app.post("/signup", async (req, res) => {
-    const user = new User(req.body);
+
 
     try {
-        await user.save();
-    unique = true
 
+        const { firstName, lastName, emailId, password} = req.body
+        //validation
+        validateSignupData(req)
+
+        //encrypt password
+        //install npm i bcrypt
+
+
+        const passwordHash =  await bcrypt.hash(password , 10)
+
+        const user = new User({
+            firstName, lastName, emailId, password: passwordHash
+        });
+        
+        
+        await user.save();
         res.send("User added successfully");
     } catch (err) {
         if (err.code === 11000) {
@@ -91,15 +107,15 @@ app.patch("/update/:userId", async (req, res) => {
     const userId = req.params?.userId
     try {
 
-        const UPDATE_ALLOWED = ["userId","firstName",  "age", "gender"]
+        const UPDATE_ALLOWED = ["userId", "firstName", "age", "gender"]
         const isAllowedUpdate = Object.keys(userUpdate).every((k) => UPDATE_ALLOWED.includes(k))
 
-        if(!isAllowedUpdate){
+        if (!isAllowedUpdate) {
             throw new Error("some fields cann't be updated")
         }
 
-        res.send(await User.findByIdAndUpdate({ _id: userId }, userUpdate,{ runValidators: true}))
-        
+        res.send(await User.findByIdAndUpdate({ _id: userId }, userUpdate, { runValidators: true }))
+
 
 
 
@@ -107,6 +123,35 @@ app.patch("/update/:userId", async (req, res) => {
         res.status(404).send("something went wrong")
     }
 })
+
+//login API
+
+
+app.post("/login", async (req, res) => {
+    try {
+        const { emailId, password } = req.body;
+
+        // Find user by emailId (fix: FindOne, not findone)
+        const user = await User.findOne({ emailId });
+
+        if (!user) {
+            return res.status(404).send("User not found");
+        }
+
+        // Compare plaintext password with hashed password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (isPasswordValid) {
+            res.send("Login successful");
+        } else {
+            res.status(401).send("Login failed: Incorrect password");
+        }
+
+    } catch (err) {
+        res.status(500).send("Server error: " + err.message);
+    }
+});
+
 
 connectDB().then(() => {
 
