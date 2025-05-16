@@ -86,10 +86,18 @@ app.delete("/delete", async (req, res) => {
 
 //update API
 
-app.patch("/update", async (req, res) => {
+app.patch("/update/:userId", async (req, res) => {
     const userUpdate = req.body
-    const userId = req.body.userId
+    const userId = req.params?.userId
     try {
+
+        const UPDATE_ALLOWED = ["userId","firstName",  "age", "gender"]
+        const isAllowedUpdate = Object.keys(userUpdate).every((k) => UPDATE_ALLOWED.includes(k))
+
+        if(!isAllowedUpdate){
+            throw new Error("some fields cann't be updated")
+        }
+
         res.send(await User.findByIdAndUpdate({ _id: userId }, userUpdate,{ runValidators: true}))
         
 
