@@ -3,17 +3,21 @@ const connectDB = require("./config/database")
 const User = require("./model/user")
 const { validateSignupData } = require("./utils/validation")
 const bcrypt = require("bcrypt")
+const cookieParser = require("cookie-parser")
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middleware/auth");
 
 const app = express();
 
 app.use(express.json())
+app.use(cookieParser())
 
 app.post("/signup", async (req, res) => {
 
 
     try {
 
-        const { firstName, lastName, emailId, password} = req.body
+        const { firstName, lastName, emailId, password } = req.body
         //validation
         validateSignupData(req)
 
@@ -21,13 +25,13 @@ app.post("/signup", async (req, res) => {
         //install npm i bcrypt
 
 
-        const passwordHash =  await bcrypt.hash(password , 10)
+        const passwordHash = await bcrypt.hash(password, 10)
 
         const user = new User({
             firstName, lastName, emailId, password: passwordHash
         });
-        
-        
+
+
         await user.save();
         res.send("User added successfully");
     } catch (err) {
@@ -39,9 +43,7 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-
 //find by email
-
 app.get("/user", async (req, res) => {
 
     const findbyEmail = req.body._id;
@@ -56,11 +58,8 @@ app.get("/user", async (req, res) => {
 
     }
 })
-
-
-
 //feedApi 
-app.get("/feed", async (req, res) => {
+app.get("/feed", userAuth,async (req, res) => {
 
     try {
         const users = await User.find({})
@@ -78,7 +77,6 @@ app.get("/feed", async (req, res) => {
     }
 
 })
-
 //deleteApi
 
 app.delete("/delete", async (req, res) => {
@@ -130,27 +128,43 @@ app.patch("/update/:userId", async (req, res) => {
 app.post("/login", async (req, res) => {
     try {
         const { emailId, password } = req.body;
-
-        // Find user by emailId (fix: FindOne, not findone)
         const user = await User.findOne({ emailId });
 
         if (!user) {
             return res.status(404).send("User not found");
         }
 
-        // Compare plaintext password with hashed password
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        if (isPasswordValid) {
-            res.send("Login successful");
-        } else {
-            res.status(401).send("Login failed: Incorrect password");
+        if (!isPasswordValid) {
+            return res.status(401).send("Login failed: Incorrect password");
         }
 
+        const token = jwt.sign({ _id: user._id }, "Password", { expiresIn: "1d" });
+
+        // ✅ Correctly set token as cookie with name "token"
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "Lax"
+        });
+
+        res.send("Login successful");
     } catch (err) {
         res.status(500).send("Server error: " + err.message);
     }
 });
+
+app.get("/profile", userAuth, async (req, res) => {
+    try {
+
+        const user = req.user;
+        res.send(user);
+    } catch (err) {
+        res.status(401).send("Access denied: " + err.message);
+    }
+});
+
 
 
 connectDB().then(() => {
