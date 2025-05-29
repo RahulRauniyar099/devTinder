@@ -11,7 +11,7 @@ const User = require("../model/user")
         throw new Error("Token not found")
     }
 
-    const decodedJWT = await jwt.verify(token, "Password");
+    const decodedJWT =  jwt.verify(token, "Password");
     const {_id} = decodedJWT;
 
     const user = await User.findById(_id);
