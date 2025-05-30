@@ -11,7 +11,6 @@ try{
     const fromUserId = req.user._id
     const toUserId = req.params.touserId
     const status = req.params.status
-        console.log("why", fromUserId, toUserId)
 
 
       if (fromUserId == toUserId) {
@@ -63,6 +62,43 @@ try{
 
 
 })
+
+//make API call for Accepted & Rejected
+//1.check user is valid (loggedIn)
+//2. check allow status
+//3. requestId is valid or not
+
+
+requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, res) => {
+  try {
+    const loggedInuser = req.user;
+    const { status, requestId } = req.params;
+
+    const allowedStatus = ["accepted", "rejected"];
+    if (!allowedStatus.includes(status)) {
+      return res.status(400).json({ message: "Status is not as expected" });
+    }
+
+    const connectionRequest = await ConnectionRequestModel.findOne({
+      _id: requestId,
+      toUserId: loggedInuser._id,
+      status: "interested"
+    });
+
+    if (!connectionRequest) {
+      return res.status(404).json({ message: "Invalid request" });
+    }
+
+    connectionRequest.status = status;
+    await connectionRequest.save();
+
+    res.status(200).json({ message: `Connection ${status}` });
+
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 
 
 module.exports = requestRouter;
