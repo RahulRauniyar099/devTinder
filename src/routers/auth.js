@@ -5,7 +5,7 @@ const authRouter = express.Router();
 const User = require("../model/user")
 const jwt = require("jsonwebtoken");
 const { validateSignupData } = require("../utils/validation")
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcrypt");
 
 
 authRouter.post("/signup", async (req, res) => {
@@ -59,11 +59,14 @@ authRouter.post("/login", async (req, res) => {
             sameSite: "Lax"
         });
 
-        res.send("Login successful");
+        res.send( user);
     } catch (err) {
         res.status(500).send("Server error: " + err.message);
     }
 });
+
+
+
 
 //logout
 
