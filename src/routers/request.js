@@ -80,16 +80,19 @@ requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, r
     }
 
     const connectionRequest = await ConnectionRequestModel.findOne({
+      
       _id: requestId,
       toUserId: loggedInuser._id,
       status: "interested"
     });
+
 
     if (!connectionRequest) {
       return res.status(404).json({ message: "Invalid request" });
     }
 
     connectionRequest.status = status;
+    
     await connectionRequest.save();
 
     res.status(200).json({ message: `Connection ${status}` });

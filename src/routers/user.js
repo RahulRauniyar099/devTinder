@@ -34,6 +34,8 @@ routerUser.get("/user/connection", userAuth, async (req, res) => {
 
 
         const loggedInUser = req.user;
+        console.log("uuu", loggedInUser);
+        
 
         const connectionRequest = await ConnectionRequest.find({
             $or: [
@@ -46,8 +48,9 @@ routerUser.get("/user/connection", userAuth, async (req, res) => {
 
                 },
             ]
-        }).populate("fromUserId", ["firstName", "lastName"])
-            .populate("toUserId", ["firstName", "lastName"])
+        }).populate("fromUserId", ["firstName", "lastName", "photoUrl", "about"])
+            .populate("toUserId", ["firstName", "lastName", "photoUrl", "about"])
+            
 
         const data = connectionRequest.map((row) => {
             if (row.fromUserId._id == loggedInUser._id) {
@@ -65,47 +68,45 @@ routerUser.get("/user/connection", userAuth, async (req, res) => {
 
 
 routerUser.get("/user/feed", userAuth, async (req, res) => {
-    try {
-        const loggedInUser = req.user;
+  try {
+    const loggedInUser = req.user;
 
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10
-        const pageNumber = (page-1) * limit;
+    // Pagination setup
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;
+    const skip = (page - 1) * limit;
 
-        //find all connections
-        const connectionRequests = ConnectionRequest.find({
-            $or: [{
-                fromUserId: loggedInUser._id
-            },
-            { toUserId: loggedInUser._id }]
-        }).select("fromUserId toUserId")
+    // Get all connection requests involving the logged-in user
+    const connectionRequests = await ConnectionRequest.find({
+      $or: [
+        { fromUserId: loggedInUser._id },
+        { toUserId: loggedInUser._id }
+      ]
+    }).select("fromUserId toUserId");
 
+    // Build a set of user IDs to exclude (connected + self)
+    const hideUserFeed = new Set();
+    hideUserFeed.add(loggedInUser._id.toString());
 
+    connectionRequests.forEach(req => {
+      hideUserFeed.add(req.fromUserId.toString());
+      hideUserFeed.add(req.toUserId.toString());
+    });
 
+    // Fetch users not already connected
+    const users = await User.find({
+      _id: { $nin: Array.from(hideUserFeed) }
+    })
+      .select("firstName lastName age gender photoUrl")
+      .skip(skip)
+      .limit(limit);
 
-        // hidden user
-        // set() it takes new a\value like a,b,c but don't take duplicate 
-        const hideUserFeed = new Set();
+    res.status(200).send(users);
+  } catch (err) {
+    console.error("Feed Error:", err);
+    res.status(400).send("Feed is not proper: " + err.message);
+  }
+});
 
-        if (Array.isArray(connectionRequests)) {
-            connectionRequests.forEach((req) => {
-                hideUserFeed.add(req.fromUserId.toString());
-                hideUserFeed.add(req.toUserId.toString());
-            })
-        } 
-
-
-
-        const user = await User.find({
-            $and: [{ _id: { $nin: Array.from(hideUserFeed) } },
-            { _id: { $ne: loggedInUser._id } }
-            ]
-        }).select("firstName lastName").skip(pageNumber).limit(limit)
-        res.send(user)
-
-    } catch (err) {
-        res.status(400).send("Feed is not proper" + err.message)
-    }
-})
 
 module.exports = routerUser;
